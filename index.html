@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dekoder UTF-16 LE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #input {
+            min-height: 120px;
+        }
+
+        #output {
+            min-height: 80px;
+            background-color: #f8f9fa;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-decode {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-decode:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-clear {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-clear:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 UTF-16 LE decoder</h1>
+        <p class="subtitle">Decode UTF-16 Little Endian encoded strings</p>
+
+        <div class="input-group">
+            <label for="input">Enter encoded text (hex):</label>
+            <textarea id="input" placeholder="Np: 01410075006B00610073007A0020"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-decode" onclick="decode()">🔍 Dekoduj</button>
+            <button class="btn-clear" onclick="clearAll()">🗑️ Wyczyść</button>
+        </div>
+
+        <div class="input-group">
+            <label for="output">Decoded text:</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+
+        <button class="btn-copy" onclick="copyToClipboard()">📋 Copy result</button>
+
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard! ✓</div>
+
+    <script>
+        // Funkcja dekodująca UTF-16 LE
+        function decodeUTF16LE(hexString) {
+            hexString = hexString.replace(/\s/g, '');
+            
+            if (hexString.length % 4 !== 0) {
+                return 'Error: Invalid hex string length (must be a multiple of 4)';
+            }
+            
+            if (!/^[0-9A-Fa-f]*$/.test(hexString)) {
+                return 'Error: String contains invalid characters (allowed: 0-9, A-F)';
+            }
+            
+            let result = '';
+            
+            for (let i = 0; i < hexString.length; i += 4) {
+                const charCode = parseInt(hexString.substr(i, 4), 16);
+                result += String.fromCharCode(charCode);
+            }
+            
+            return result;
+        }
+
+        function decode() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+            
+            if (!input.trim()) {
+                output.value = 'Please enter text to decode';
+                return;
+            }
+            
+            const decoded = decodeUTF16LE(input);
+            output.value = decoded;
+        }
+
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('input').focus();
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            
+            if (!output.value) {
+                showToast('No text to copy!', false);
+                return;
+            }
+            
+            output.select();
+            document.execCommand('copy');
+            
+            showToast('Copied to clipboard! ✓', true);
+        }
+
+        function showToast(message, success) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = success ? '#28a745' : '#dc3545';
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        document.getElementById('input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                decode();
+            }
+        });
+
+        window.onload = function() {
+            document.getElementById('input').value = '01410075006B00610073007A0020';
+        };
+    </script>
+</body>
+</html>
